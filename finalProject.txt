@@ -1,0 +1,452 @@
+USE Master
+
+GO
+DROP DATABASE IF EXISTS schooldb
+
+GO
+CREATE DATABASE schooldb
+
+GO
+USE schooldb
+
+GO
+PRINT 'Part A Completed'
+
+GO
+DROP PROCEDURE IF EXISTS usp_dropTables
+
+GO
+CREATE PROCEDURE usp_dropTables
+AS
+BEGIN
+  DROP TABLE IF EXISTS StudentContacts;
+  DROP TABLE IF EXISTS Student_Course;
+  DROP TABLE IF EXISTS CourseList;
+  DROP TABLE IF EXISTS StudentInformation;
+  DROP TABLE IF EXISTS Employees;
+  DROP TABLE IF EXISTS EmpJobPosition;
+  DROP TABLE IF EXISTS ContactType;
+END
+
+GO
+EXEC usp_dropTables
+
+GO
+PRINT 'Part B Completed'
+
+GO
+CREATE TABLE StudentInformation
+(
+  StudentID int NOT NULL IDENTITY(100, 1) PRIMARY KEY,
+  Title char(10) NULL,
+  FirstName char(50) NOT NULL,
+  LastName char(50) NOT NULL,
+  Address1 char(254) NULL,
+  Address2 char(254) NULL,
+  City char(50) NULL,
+  County char(50) NULL,
+  Zip char(10) NULL,
+  Country char(50) NULL,
+  Telephone char(20) NULL,
+  Email char(254) NULL,
+  Enrolled char(15) NULL,
+  AltTelephone char(20) NULL
+)
+
+GO
+CREATE TABLE CourseList
+(
+  CourseID int NOT NULL IDENTITY(10, 1) PRIMARY KEY,
+  CourseDescription char(254) NOT NULL,
+  CourseCost decimal(8,2) NULL,
+  CourseDurationYears char(10) NULL,
+  Notes char(1000) NULL
+)
+
+GO
+CREATE TABLE EmpJobPosition
+(
+  EmployeePositionID int NOT NULL IDENTITY(1, 1) PRIMARY KEY,
+  EmployeePosition char(50) NOT NULL
+)
+
+GO
+CREATE TABLE  Employees
+(
+  EmployeeID int NOT NULL IDENTITY(1000, 1) PRIMARY KEY,
+  EmployeeName char(50) NOT NULL,
+  EmployeePositionID int NOT NULL
+  CONSTRAINT fk_employees_empjobposition FOREIGN KEY (EmployeePositionID) REFERENCES EmpJobPosition (EmployeePositionID),
+  EmployeePassword char(50) NULL,
+  Access char(10) NULL
+)
+
+GO
+CREATE TABLE Student_Courses
+(
+  StudentCourseID int NOT NULL IDENTITY(1, 1) PRIMARY KEY,
+  StudentID int NOT NULL
+  CONSTRAINT fk_studentcourses_studentinformation FOREIGN KEY (StudentID) REFERENCES StudentInformation (StudentID),
+  CourseID int NOT NULL
+  CONSTRAINT fk_studentcourses_courselist FOREIGN KEY (CourseID) REFERENCES CourseList (CourseID),
+  CourseStartDate char(10) NOT NULL,
+  CourseComplete char(254) NULL
+)
+
+GO
+CREATE TABLE ContactType
+(
+  ContactTypeID int NOT NULL IDENTITY(1, 1) PRIMARY KEY,
+  ContactType char(50) NOT NULL
+)
+
+GO
+CREATE TABLE StudentContacts
+(
+  ContactID int NOT NULL IDENTITY(10000, 1) PRIMARY KEY,
+  StudentID int NOT NULL
+  CONSTRAINT fk_studentcontacts_studentinformation FOREIGN KEY (StudentID) REFERENCES StudentInformation (StudentID),
+  ContactTypeID int NOT NULL
+  CONSTRAINT fk_studentcontacts_contacttype FOREIGN KEY (ContactTypeID) REFERENCES ContactType (ContactTypeID),
+  EmployeeID int NOT NULL
+  CONSTRAINT fk_studentcontacts_employees FOREIGN KEY (EmployeeID) REFERENCES Employees (EmployeeID),
+  ContactDate char(10) NOT NULL,
+  ContactDetails char(50) NOT NULL
+)
+
+GO
+PRINT 'Part C Completed'
+
+GO
+IF NOT EXISTS
+	(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+		WHERE CONSTRAINT_NAME = 'unique_student_courses')
+			BEGIN
+				ALTER TABLE Student_Courses ADD CONSTRAINT unique_student_courses UNIQUE (StudentID, CourseID)
+			END
+
+GO
+ALTER TABLE StudentInformation
+ADD CreatedDateTime datetime NULL CONSTRAINT df_CreatedDateTime DEFAULT GETDATE()
+
+GO
+ALTER TABLE StudentInformation DROP COLUMN AltTelephone
+
+GO
+IF NOT EXISTS
+	(SELECT * FROM sys.indexes
+		WHERE name = 'IX_LastName' AND object_id = OBJECT_ID('Schema.StudentInformation'))
+			BEGIN
+				CREATE INDEX IX_LastName ON StudentInformation(LastName)
+			END
+
+GO
+PRINT 'Part D Completed'
+
+GO
+DROP TRIGGER IF EXISTS trg_assignEmail
+
+GO
+CREATE TRIGGER trg_assignEmail ON StudentInformation
+	AFTER INSERT
+		AS
+			DECLARE @maxID INTEGER, @email char(50)
+			SET @maxID = (SELECT MAX(StudentID) FROM StudentInformation)
+			SET @email = (SELECT Email FROM StudentInformation WHERE StudentID = @maxID)
+
+				IF	NOT (ISNULL(LEN(@email),0) = 0)
+					BEGIN
+						RETURN;
+					END
+				ELSE
+					BEGIN
+						UPDATE StudentInformation
+						SET Email = (SELECT TRIM(FirstName) + '.' + TRIM(LastName) + '@disney.com')
+							WHERE StudentID = @maxID
+						RETURN;
+					END
+
+GO
+INSERT INTO StudentInformation
+	(FirstName, LastName, Email)
+VALUES
+	('Porky', 'Pig', 'porky.pig@warnerbros.com')
+
+INSERT INTO StudentInformation
+	(FirstName, LastName)
+VALUES
+	('Snow', 'White')
+
+GO
+PRINT 'Part E Completed'
+
+GO
+INSERT INTO StudentInformation
+   (FirstName,LastName)
+VALUES
+   ('Mickey', 'Mouse')
+
+GO
+INSERT INTO StudentInformation
+   (FirstName,LastName)
+VALUES
+   ('Minnie', 'Mouse')
+
+GO
+INSERT INTO StudentInformation
+   (FirstName,LastName)
+VALUES
+   ('Donald', 'Duck')
+
+GO
+SELECT * FROM StudentInformation
+
+GO
+INSERT INTO CourseList
+   (CourseDescription)
+VALUES
+   ('Advanced Math')
+
+GO
+INSERT INTO CourseList
+   (CourseDescription)
+VALUES
+   ('Intermediate Math')
+
+GO
+INSERT INTO CourseList
+   (CourseDescription)
+VALUES
+   ('Beginning Computer Science')
+
+GO
+INSERT INTO CourseList
+   (CourseDescription)
+VALUES
+   ('Advanced Computer Science')
+
+GO
+select * from CourseList
+
+GO
+INSERT INTO Student_Courses
+   (StudentID,CourseID,CourseStartDate)
+VALUES
+   (100, 10, '01/05/2018')
+
+GO
+INSERT INTO Student_Courses
+   (StudentID,CourseID,CourseStartDate)
+VALUES
+   (101, 11, '01/05/2018')
+
+GO
+INSERT INTO Student_Courses
+   (StudentID,CourseID,CourseStartDate)
+VALUES
+   (102, 11, '01/05/2018')
+
+GO
+INSERT INTO Student_Courses
+   (StudentID,CourseID,CourseStartDate)
+VALUES
+   (100, 11, '01/05/2018')
+
+GO
+INSERT INTO Student_Courses
+   (StudentID,CourseID,CourseStartDate)
+VALUES
+   (102, 13, '01/05/2018')
+
+GO
+select * from Student_Courses
+
+GO
+INSERT INTO EmpJobPosition
+   (EmployeePosition)
+VALUES
+   ('Math Instructor')
+
+GO
+INSERT INTO EmpJobPosition
+   (EmployeePosition)
+VALUES
+   ('Computer Science')
+
+GO
+select * from EmpJobPosition
+
+GO
+INSERT INTO Employees
+   (EmployeeName,EmployeePositionID)
+VALUES
+   ('Walt Disney', 1)
+
+GO
+INSERT INTO Employees
+   (EmployeeName,EmployeePositionID)
+VALUES
+   ('John Lasseter', 2)
+
+GO
+INSERT INTO Employees
+   (EmployeeName,EmployeePositionID)
+VALUES
+   ('Danny Hillis', 2)
+
+GO
+select * from Employees
+
+GO
+INSERT INTO ContactType
+   (ContactType)
+VALUES
+   ('Tutor')
+
+GO
+INSERT INTO ContactType
+   (ContactType)
+VALUES
+   ('Homework Support')
+
+GO
+INSERT INTO ContactType
+   (ContactType)
+VALUES
+   ('Conference')
+
+GO
+SELECT * from ContactType
+
+GO
+INSERT INTO StudentContacts
+   (StudentID,ContactTypeID,EmployeeID,ContactDate,ContactDetails)
+VALUES
+   (100, 1, 1000, '11/15/2017', 'Micky and Walt Math Tutoring')
+
+GO
+INSERT INTO StudentContacts
+   (StudentID,ContactTypeID,EmployeeID,ContactDate,ContactDetails)
+VALUES
+   (101, 2, 1001, '11/18/2017', 'Minnie and John Homework support')
+
+GO
+INSERT INTO StudentContacts
+   (StudentID,ContactTypeID,EmployeeID,ContactDate,ContactDetails)
+VALUES
+   (100, 3, 1001, '11/18/2017', 'Micky and Walt Conference')
+
+GO
+INSERT INTO StudentContacts
+   (StudentID,ContactTypeID,EmployeeID,ContactDate,ContactDetails)
+VALUES
+   (102, 2, 1002, '11/20/2017', 'Donald and Danny Homework support')
+
+GO
+SELECT * from StudentContacts
+
+GO
+
+---- Note for Part E, use these two inserts as examples to test the trigger
+---- They will also be needed if youï¿½re using the examples for Part G
+
+INSERT INTO StudentInformation
+   (FirstName,LastName,Email)
+VALUES
+   ('Porky', 'Pig', 'porky.pig@disney.com')
+
+GO
+INSERT INTO StudentInformation
+   (FirstName,LastName)
+VALUES
+   ('Snow', 'White')
+
+GO
+PRINT 'Part F Completed'
+
+GO
+DROP PROCEDURE IF EXISTS usp_addQuickContacts
+
+GO
+CREATE PROCEDURE usp_addQuickContacts @studentEmail char(254), @employeeName char(50), @contactDetails char(50),
+@contactType char(50)
+
+AS
+	DECLARE @cTypeID INTEGER, @empID INTEGER, @studentID INTEGER, @cNewTypeID INTEGER
+	SET @cTypeID = (SELECT ContactTypeID FROM ContactType WHERE ContactType = @contactType)
+	SET @empID = (SELECT EmployeeID FROM Employees WHERE EmployeeName = @employeeName)
+	SET @studentID = (SELECT StudentID FROM StudentInformation WHERE Email = @studentEmail)
+
+		IF  NOT (ISNULL(LEN(@cTypeID),0) = 0)
+			BEGIN
+
+
+				INSERT INTO StudentContacts(StudentID, ContactTypeID, EmployeeID, ContactDate, ContactDetails)
+				VALUES (@studentID, @cTypeID, @empID, CONVERT(CHAR(10), GETDATE(), 101), @contactDetails)
+				RETURN;
+			END
+		ELSE
+			BEGIN
+
+				INSERT INTO ContactType(ContactType) VALUES (@contactType)
+
+				SET @cNewTypeID = (SELECT ContactTypeID FROM ContactType WHERE ContactType = @contactType)
+				INSERT INTO StudentContacts(StudentID, ContactTypeID, EmployeeID, ContactDate, ContactDetails)
+				VALUES (@studentID, @cNewTypeID, @empID, CONVERT(CHAR(10), GETDATE(), 101), @contactDetails)
+				RETURN;
+		END
+GO
+
+EXEC usp_addQuickContacts 'Minnie.Mouse@disney.com', 'John Lasseter', 'Minnie getting Homework Support from John', 'Homework Support'
+------- NEEDED TO CHANGE THE STUDENT EMAIL  'minnie.mouse' --> 'Minnie.Mouse' ----
+
+EXEC usp_addQuickContacts 'porky.pig@disney.com', 'John Lasseter', 'Porky studying with John for Test prep', 'Test Prep'
+
+GO
+PRINT 'Part G Completed'
+
+GO
+DROP PROCEDURE IF EXISTS usp_getCourseRosterByName
+
+GO
+CREATE PROCEDURE usp_getCourseRosterByName @courseDesc char(50)
+AS
+	BEGIN
+		SELECT C.CourseDescription, SI.FirstName, SI.LastName
+		FROM CourseList C
+		INNER JOIN
+		Student_Courses SC
+		ON C.CourseID = SC.CourseID
+		INNER JOIN
+		StudentInformation SI
+		ON SC.StudentID = SI.StudentID
+			WHERE C.CourseDescription = @courseDesc
+	END
+
+GO
+EXEC usp_getCourseRosterByName 'Intermediate Math'
+
+GO
+PRINT 'Part H Completed'
+
+GO
+DROP VIEW IF EXISTS vtutorContacts
+
+GO
+CREATE VIEW vtutorContact
+	AS
+		SELECT E.EmployeeName, TRIM(S.FirstName) + ' ' + TRIM(S.LastName) AS StudentName, SC.ContactDetails, SC.ContactDate
+		FROM StudentContacts SC
+		INNER JOIN
+		Employees E
+		ON SC.EmployeeID = E.EmployeeID
+		INNER JOIN
+		StudentInformation S
+		ON SC.StudentID = S.StudentID
+		INNER JOIN
+		ContactType CT
+		ON SC.ContactTypeID = CT.ContactTypeID
+			WHERE CT.ContactType = 'Tutor'
+
+GO
+PRINT 'Part I Competed'

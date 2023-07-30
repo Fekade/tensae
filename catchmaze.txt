@@ -1,0 +1,40 @@
+//      try{
+//            url = Maze.class.getResource(fileName);
+//            filereader = new FileReader(new File(url.getPath()));
+//        }
+//        catch(FileNotFoundException e){
+//            System.out.println("Maze file does not exist."
+//                    + e + "\nThe program will exit.");
+//            return;
+//        }
+//
+//     try {
+//             in = new Scanner(new FileReader(new File(url.getPath())));
+//             while(in.hasNextLine())
+//             {
+//                 for (int i = 0; i < MAX_MAZE_ROW; i++)
+//                 {
+//                     EACH_LINE[i] = in.nextLine();
+//                     CHARS_IN_FILE = EACH_LINE[i].toCharArray();
+//                     for (int j = 0; j < MAX_MAZE_COLUMN; j++)
+//                     {
+//                         symbol = CHARS_IN_FILE[j];
+//                         maze[i][j] = new Wall(i,j, symbol);
+//                     }
+//
+//                     System.out.println("\n");
+//                 }
+//
+//             }
+//        in.close();
+//        } catch (IOException ex)
+//          {
+//             System.out.println("File " + fileName + "could not be read!");
+//             System.exit(0);
+//          }
+
+////            catch (IOException ex)
+//            {
+//             System.out.println("File " + fileName + "could not be read!");
+//             System.exit(0);
+//            }
